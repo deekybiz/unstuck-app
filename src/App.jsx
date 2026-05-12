@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+// 1. FIX: Use the correct model ID
+const MODEL_ID = "gemini-3-flash-preview"; 
+
+// 2. FIX: Check both Vite and Cloudflare's variable locations
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = `You are a warm, encouraging ADHD coach named Spark. Break a big overwhelming goal into micro-tasks that feel almost TOO easy to start.
 
@@ -144,9 +149,18 @@ export default function App() {
       });
 
       const data = await res.json();
+      // Log this to your browser console (F12) so you can see if I'm actually talking!
+      console.log("Gemini Response:", data); 
+      
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+      if (!text) throw new Error("Empty response");
+      
+      // Robust JSON extraction
+      const jsonStart = text.indexOf('{');
+      const jsonEnd = text.lastIndexOf('}') + 1;
+      const jsonText = text.substring(jsonStart, jsonEnd);
+      
+      const parsed = JSON.parse(jsonText);
       setResult(parsed);
     } catch {
       setError("Something went wrong. Take a breath and try again. 🌿");

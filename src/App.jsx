@@ -162,8 +162,9 @@ export default function App() {
       
       const parsed = JSON.parse(jsonText);
       setResult(parsed);
-    } catch {
-      setError("Something went wrong. Take a breath and try again. 🌿");
+    } catch (err) {
+      console.error("Full error:", err);
+      setError(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }

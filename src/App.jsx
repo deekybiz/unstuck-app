@@ -137,34 +137,44 @@ export default function App() {
     setResult(null);
     setChecked({});
     completionSaved.current = false;
-
+  
     try {
       const res = await fetch(GEMINI_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${SYSTEM_PROMPT}\n\nMy overwhelming goal: ${goal}` }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1000 },
+          contents: [{ parts: [{ text: `${SYSTEM_PROMPT}\n\nGoal: ${goal}` }] }],
+          generationConfig: { 
+            temperature: 1.0, // Gemini 3 likes 1.0
+            maxOutputTokens: 2000, // Increased to prevent truncation
+            response_mime_type: "application/json" // OFFICIAL JSON MODE
+          },
         }),
       });
-
+  
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error("API Error:", errorData);
+        throw new Error(`API returned ${res.status}`);
+      }
+  
       const data = await res.json();
-      // Log this to your browser console (F12) so you can see if I'm actually talking!
-      console.log("Gemini Response:", data); 
+      console.log("Raw Data:", data);
+  
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      if (!text) throw new Error("Empty response");
+      if (!rawText) {
+        throw new Error("The coach is silent. Try again?");
+      }
+  
+      // Safety: Even in JSON mode, sometimes there's weird whitespace
+      const cleanJson = rawText.trim();
+      const parsed = JSON.parse(cleanJson);
       
-      // Robust JSON extraction
-      const jsonStart = text.indexOf('{');
-      const jsonEnd = text.lastIndexOf('}') + 1;
-      const jsonText = text.substring(jsonStart, jsonEnd);
-      
-      const parsed = JSON.parse(jsonText);
       setResult(parsed);
     } catch (err) {
-      console.error("Full error:", err);
-      setError(`Error: ${err.message}`);
+      console.error("Full Error:", err);
+      setError("Spark hit a snag. Check the console or try a different goal! 🌿");
     } finally {
       setLoading(false);
     }

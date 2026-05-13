@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // 1. FIX: Use the correct model ID
-const MODEL_ID = "gemini-3-flash-preview"; 
+const MODEL_ID = "gemini-1.5-flash"; 
 
 // 2. FIX: Check both Vite and Cloudflare's variable locations
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;

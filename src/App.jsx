@@ -174,7 +174,7 @@ export default function App() {
       setResult(parsed);
     } catch (err) {
       console.error("Full Error:", err);
-      setError("Spark hit a snag. Check the console or try a different goal! 🌿");
+      setError("Spark hit a snag. Check the console or try a different goal! 🌿" + err);
     } finally {
       setLoading(false);
     }

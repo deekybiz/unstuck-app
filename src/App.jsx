@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // 1. FIX: Use the correct model ID
-const MODEL_ID = "gemini-1.5-flash"; 
+const MODEL_ID = "gemini-3-flash-preview"; 
 
 // 2. FIX: Check both Vite and Cloudflare's variable locations
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
@@ -132,55 +132,25 @@ export default function App() {
 
   const decompose = async () => {
     if (!goal.trim() || loading) return;
-      setLoading(true);
-      setError("");
-      setResult(null);
-      setChecked({});
-      completionSaved.current = false;
-    
-      try {
-        const res = await fetch(GEMINI_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            // Move the system prompt here for better reliability
-            system_instruction: {
-              parts: [{ text: SYSTEM_PROMPT }]
-            },
-            contents: [
-              { 
-                role: "user", 
-                parts: [{ text: `Goal: ${goal}` }] 
-              }
-            ],
-            generationConfig: {
-              temperature: 1.0,
-              maxOutputTokens: 2000,
-              // If 400 persists, try commenting out the line below
-              response_mime_type: "application/json" 
-            },
-          }),
-        });
-    
-        if (!res.ok) {
-          const errorData = await res.json(); // Use .json() to see the actual API message
-          console.error("Detailed API Error:", errorData);
-          throw new Error(errorData.error?.message || `API returned ${res.status}`);
-        }
-    
-        const data = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-        if (!rawText) throw new Error("The coach is silent. Try again?");
-    
-        setResult(JSON.parse(rawText));
-      } catch (err) {
-        console.error("Full Error:", err);
-        setError(`Spark hit a snag: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setChecked({});
+    completionSaved.current = false;
+  
+    try {
+      const res = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${SYSTEM_PROMPT}\n\nGoal: ${goal}` }] }],
+          generationConfig: { 
+            temperature: 1.0, // Gemini 3 likes 1.0
+            maxOutputTokens: 2000, // Increased to prevent truncation
+            response_mime_type: "application/json" // OFFICIAL JSON MODE
+          },
+        }),
+      });
   
       if (!res.ok) {
         const errorData = await res.text();
@@ -204,7 +174,7 @@ export default function App() {
       setResult(parsed);
     } catch (err) {
       console.error("Full Error:", err);
-      setError("Spark hit a snag. Check the console or try a different goal! 🌿" + err);
+      setError("Spark hit a snag. Check the console or try a different goal! 🌿");
     } finally {
       setLoading(false);
     }
